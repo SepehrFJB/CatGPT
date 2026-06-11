@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.codex_tmp/
+*.egg-info/
+catgpt.sqlite3
+*.sqlite3
+*.db
+backups/
+catgpt.png
+catgptbot.png
