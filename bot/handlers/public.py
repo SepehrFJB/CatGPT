@@ -251,11 +251,6 @@ async def guest_chat(
         await answer_guest_text(message, guest_query_id, "Access blocked", BLOCKED_ACCESS_MESSAGE)
         return
 
-    missing = [] if is_admin else await missing_required_channels(message.bot, app_storage, user.id)
-    if missing:
-        await answer_guest_text(message, guest_query_id, "Membership required", FORCE_JOIN_REQUIRED_MESSAGE)
-        return
-
     quota = await app_storage.try_consume_quota(
         telegram_id=user.id,
         chat_id=message.chat.id,
@@ -394,6 +389,10 @@ async def force_join_check(callback: CallbackQuery, app_storage: CatGPTStorage) 
         )
         return
     await callback.answer(FORCE_JOIN_OK_MESSAGE, show_alert=True)
+    try:
+        await callback.message.edit_text(FORCE_JOIN_OK_MESSAGE, reply_markup=None)
+    except TelegramBadRequest:
+        logger.warning("Could not update force join message after successful verification")
 
 
 async def handle_ai_chat(
@@ -742,10 +741,11 @@ async def ensure_user_access(message: Message, settings: Settings, app_storage: 
     if await app_storage.is_blocked(message.from_user.id, message.chat.id):
         await message.answer(BLOCKED_ACCESS_MESSAGE)
         return False
-    missing = await missing_required_channels(message.bot, app_storage, message.from_user.id)
-    if missing:
-        await message.answer(FORCE_JOIN_REQUIRED_MESSAGE, reply_markup=force_join_check_keyboard(missing))
-        return False
+    if is_private_chat(message):
+        missing = await missing_required_channels(message.bot, app_storage, message.from_user.id)
+        if missing:
+            await message.answer(FORCE_JOIN_REQUIRED_MESSAGE, reply_markup=force_join_check_keyboard(missing))
+            return False
     return True
 
 

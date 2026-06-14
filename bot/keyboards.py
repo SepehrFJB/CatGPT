@@ -153,7 +153,7 @@ def force_join_check_keyboard(channels: list[dict[str, object]]) -> InlineKeyboa
         title = str(channel.get("title") or username or "Channel")
         if not username:
             continue
-        buttons.append([InlineKeyboardButton(text=f"📢 {title}", url=f"https://t.me/{username}")])
+        buttons.append([InlineKeyboardButton(text=title, url=f"https://t.me/{username}")])
     buttons.append([InlineKeyboardButton(text="✅ Check membership", callback_data="force:check")])
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
