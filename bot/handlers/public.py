@@ -382,6 +382,13 @@ async def force_join_check(callback: CallbackQuery, app_storage: CatGPTStorage) 
         return
     missing = await missing_required_channels(callback.message.bot, app_storage, callback.from_user.id)
     if missing:
+        try:
+            await callback.message.edit_text(
+                FORCE_JOIN_REQUIRED_MESSAGE,
+                reply_markup=force_join_check_keyboard(missing),
+            )
+        except TelegramBadRequest:
+            pass
         await callback.answer(FORCE_JOIN_MISSING_MESSAGE, show_alert=True)
         return
     await callback.answer(FORCE_JOIN_OK_MESSAGE, show_alert=True)
