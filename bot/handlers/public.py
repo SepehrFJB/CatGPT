@@ -383,10 +383,6 @@ async def force_join_check(callback: CallbackQuery, app_storage: CatGPTStorage) 
     missing = await missing_required_channels(callback.message.bot, app_storage, callback.from_user.id)
     if missing:
         await callback.answer(FORCE_JOIN_MISSING_MESSAGE, show_alert=True)
-        await callback.message.answer(
-            FORCE_JOIN_REQUIRED_MESSAGE,
-            reply_markup=force_join_check_keyboard(missing),
-        )
         return
     await callback.answer(FORCE_JOIN_OK_MESSAGE, show_alert=True)
     try:
