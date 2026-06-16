@@ -120,7 +120,19 @@ def format_account_message(
 def format_support_line(support_url: str) -> str:
     if not support_url:
         return "📞 Support"
-    safe_url = escape(support_url, quote=True)
+    
+    url = support_url.strip()
+    if url.isdigit():
+        url = f"tg://user?id={url}"
+    elif url.startswith("@"):
+        url = f"https://t.me/{url[1:]}"
+    elif not (url.startswith("http://") or url.startswith("https://") or url.startswith("tg://")):
+        if "/" not in url and "." not in url:
+            url = f"https://t.me/{url}"
+        elif url.startswith("t.me/"):
+            url = f"https://{url}"
+
+    safe_url = escape(url, quote=True)
     return f'📞 <a href="{safe_url}">Support</a>'
 
 
