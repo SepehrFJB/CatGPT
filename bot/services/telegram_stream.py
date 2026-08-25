@@ -192,7 +192,10 @@ def flush_blockquote(quote_lines: list[str], output_lines: list[str]) -> None:
         return
     quote_text = "\n".join(quote_lines).strip()
     if quote_text:
-        output_lines.append(f"<blockquote>{quote_text}</blockquote>")
+        if len(quote_lines) >= 3 or len(quote_text) > 150:
+            output_lines.append(f"<blockquote expandable>{quote_text}</blockquote>")
+        else:
+            output_lines.append(f"<blockquote>{quote_text}</blockquote>")
     quote_lines.clear()
 
 
@@ -202,13 +205,15 @@ def has_inline_markdown(text: str) -> bool:
         or "**" in text
         or "__" in text
         or "~~" in text
+        or "||" in text
         or "<blockquote>" in text
+        or "<blockquote expandable>" in text
         or bool(re.search(r"\[[^\]\n]+\]\([^) \n]+(?: [^)]+)?\)", text))
     )
 
 
 def format_inline_markdown_as_html(text: str) -> str:
-    if "<blockquote>" in text:
+    if "<blockquote" in text:
         return format_inline_markdown_preserving_blockquotes(text)
 
     parts: list[str] = []
@@ -240,6 +245,17 @@ def format_inline_markdown_as_html(text: str) -> str:
             position = end + 1
             continue
 
+        if text.startswith("||", next_start):
+            end = text.find("||", next_start + 2)
+            if end < 0 or "\n" in text[next_start + 2 : end]:
+                parts.append("||")
+                position = next_start + 2
+                continue
+            inner = format_inline_markdown_as_html(text[next_start + 2 : end])
+            parts.append(f"<tg-spoiler>{inner}</tg-spoiler>")
+            position = end + 2
+            continue
+
         if text.startswith("~~", next_start):
             end = text.find("~~", next_start + 2)
             if end < 0 or "\n" in text[next_start + 2 : end]:
@@ -267,12 +283,13 @@ def format_inline_markdown_as_html(text: str) -> str:
 def format_inline_markdown_preserving_blockquotes(text: str) -> str:
     parts: list[str] = []
     position = 0
-    pattern = re.compile(r"<blockquote>(.*?)</blockquote>", re.DOTALL)
+    pattern = re.compile(r"<blockquote( expandable)?>(.*?)</blockquote>", re.DOTALL)
     for match in pattern.finditer(text):
         if match.start() > position:
             parts.append(format_inline_markdown_as_html(text[position : match.start()]))
-        quote_body = format_inline_markdown_as_html(match.group(1))
-        parts.append(f"<blockquote>{quote_body}</blockquote>")
+        attr = match.group(1) or ""
+        quote_body = format_inline_markdown_as_html(match.group(2))
+        parts.append(f"<blockquote{attr}>{quote_body}</blockquote>")
         position = match.end()
     if position < len(text):
         parts.append(format_inline_markdown_as_html(text[position:]))
@@ -286,6 +303,7 @@ def find_next_inline_marker(text: str, start: int) -> int:
             text.find("**", start),
             text.find("__", start),
             text.find("~~", start),
+            text.find("||", start),
             find_next_markdown_link(text, start),
         )
         if index >= 0
