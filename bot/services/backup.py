@@ -24,12 +24,14 @@ class DatabaseBackupService:
         storage: CatGPTStorage,
         database_url: str,
         backup_dir: Path | str = "backups",
+        log_file_path: Path | str = "logs/catgpt.log",
         keep_count: int = 10,
     ) -> None:
         self.bot = bot
         self.storage = storage
         self.database_path = resolve_database_path(database_url)
         self.backup_dir = Path(backup_dir)
+        self.log_file_path = Path(log_file_path)
         self.keep_count = max(1, int(keep_count))
         self._task: asyncio.Task[None] | None = None
         self._stop = asyncio.Event()
@@ -58,13 +60,23 @@ class DatabaseBackupService:
     ) -> Path:
         await self.storage.cleanup_runtime_rows()
         backup_file = await asyncio.to_thread(self._create_backup_file)
+        has_log = self.log_file_path.exists() and self.log_file_path.stat().st_size > 0
         try:
             await self._send_backup_file(
                 chat_id=chat_id,
                 backup_file=backup_file,
                 manual=manual,
-                reply_markup=reply_markup,
+                reply_markup=None if has_log else reply_markup,
             )
+            if has_log:
+                try:
+                    await self._send_log_file(
+                        chat_id=chat_id,
+                        manual=manual,
+                        reply_markup=reply_markup,
+                    )
+                except Exception:
+                    logger.exception("Failed to send log file to chat %s", chat_id)
             return backup_file
         finally:
             await asyncio.to_thread(self._cleanup_old_backups)
@@ -81,8 +93,12 @@ class DatabaseBackupService:
                         backup_file=backup_file,
                         manual=manual,
                     )
+                    await self._send_log_file(
+                        chat_id=owner_id,
+                        manual=manual,
+                    )
                 except Exception:
-                    logger.exception("Failed to send database backup to owner %s", owner_id)
+                    logger.exception("Failed to send backup or logs to owner %s", owner_id)
         finally:
             await asyncio.to_thread(self._cleanup_old_backups)
 
@@ -137,6 +153,31 @@ class DatabaseBackupService:
         await self.bot.send_document(
             chat_id=chat_id,
             document=FSInputFile(str(backup_file), filename=backup_file.name),
+            caption=caption,
+            reply_markup=reply_markup,
+        )
+
+    async def _send_log_file(
+        self,
+        *,
+        chat_id: int,
+        manual: bool,
+        reply_markup: ReplyKeyboardMarkup | None = None,
+    ) -> None:
+        if not self.log_file_path.exists() or self.log_file_path.stat().st_size <= 0:
+            return
+        title = "Manual log export" if manual else "Automatic daily log export"
+        caption = "\n".join(
+            [
+                f"📜 {title}",
+                f"File: {self.log_file_path.name}",
+                f"Size: {format_kilobytes(self.log_file_path.stat().st_size)}",
+                f"UTC: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')}",
+            ]
+        )
+        await self.bot.send_document(
+            chat_id=chat_id,
+            document=FSInputFile(str(self.log_file_path), filename=self.log_file_path.name),
             caption=caption,
             reply_markup=reply_markup,
         )

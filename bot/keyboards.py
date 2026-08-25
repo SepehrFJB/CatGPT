@@ -11,7 +11,7 @@ ADMIN_BUTTONS = (
     "👨‍✈️ Admins",
     "🥷 Force Join",
     "⛔️ Block User or Group",
-    "📥 Get Database",
+    "📥 Get Database & Logs",
 )
 
 ADMIN_BACK = "🔙 Back"

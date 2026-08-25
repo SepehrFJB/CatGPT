@@ -9,16 +9,14 @@ from aiogram import Bot, Dispatcher
 from bot.config import Settings, SettingsError
 from bot.database import CatGPTStorage
 from bot.handlers import admin, payments, public
+from bot.logging_config import setup_logging
 from bot.services.ai import CatGPTAI
 from bot.services.backup import DatabaseBackupService
 from bot.services.plus_expiry import PlusExpiryNotifier
 
 
 async def main() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
-    )
+    setup_logging()
     settings = Settings.from_env()
     app_storage = await CatGPTStorage.connect(settings.database_url)
     await app_storage.init_schema()

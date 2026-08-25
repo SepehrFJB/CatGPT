@@ -11,5 +11,7 @@ catgpt.sqlite3
 *.sqlite3
 *.db
 backups/
+logs/
+*.log
 catgpt.png
 catgptbot.png

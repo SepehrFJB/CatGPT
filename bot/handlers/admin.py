@@ -228,9 +228,9 @@ async def admin_get_database(
     backup_service: DatabaseBackupService,
 ) -> None:
     if not await is_owner(message, app_storage):
-        await message.answer("⛔️ Only the owner can get the database.", reply_markup=admin_keyboard())
+        await message.answer("⛔️ Only the owner can get the database and logs.", reply_markup=admin_keyboard())
         return
-    preparing_message = await message.answer("⏳ Preparing database backup...")
+    preparing_message = await message.answer("⏳ Preparing backup and log files...")
     try:
         await backup_service.send_backup_to_chat(
             message.chat.id,
@@ -242,8 +242,8 @@ async def admin_get_database(
         except TelegramBadRequest:
             pass
     except Exception:
-        logger.exception("Manual database backup failed")
-        await message.answer("⛔️ Could not create or send the database backup.", reply_markup=admin_keyboard())
+        logger.exception("Manual database and log backup failed")
+        await message.answer("⛔️ Could not create or send the backup and log files.", reply_markup=admin_keyboard())
 
 
 @router.message(F.text.in_({ADMIN_BROADCAST_USERS, ADMIN_BROADCAST_GROUPS}))
