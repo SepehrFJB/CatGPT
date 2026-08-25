@@ -20,7 +20,7 @@ ADMIN_PANEL_MESSAGE = "Welcome to the admin panel 👋"
 ADMIN_PLACEHOLDER_MESSAGE = "This admin action is not configured yet."
 
 INPUT_TOO_LONG_MESSAGE = "Please keep your message under {limit} characters."
-UNSUPPORTED_ATTACHMENT_MESSAGE = "I can only accept text messages right now."
+UNSUPPORTED_ATTACHMENT_MESSAGE = "I can only accept text and photo messages right now."
 PHOTO_DISABLED_MESSAGE = "Photo analysis is currently disabled. Please send text instead."
 BLOCKED_ACCESS_MESSAGE = "⛔️ Your access to this bot is blocked."
 FORCE_JOIN_REQUIRED_MESSAGE = "To use CatGPT, please join the required channels first:"
@@ -37,7 +37,7 @@ AI_TIMEOUT_MESSAGE = (
     "🐾 The cat is taking too long to wake up. Please try again in a moment."
 )
 IMAGE_PROVIDER_ERROR_MESSAGE = (
-    "Photo analysis is currently disabled. Please send text instead."
+    "🐾 The cat could not process this photo. Please try again with a clearer image."
 )
 PLUS_PAYMENT_SUCCESS_MESSAGE = "CatGPT Plus is active for 30 days. Thank you."
 PLUS_PAYMENT_INVALID_MESSAGE = "This payment could not be verified."

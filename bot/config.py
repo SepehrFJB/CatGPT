@@ -27,6 +27,7 @@ class Settings:
     max_output_tokens: int
     database_url: str
     group_welcome_photo: str
+    deepseek_vision_detail: str
 
     @classmethod
     def from_env(cls, env_file: str | Path = ".env") -> "Settings":
@@ -36,7 +37,8 @@ class Settings:
             bot_token=_required("BOT_TOKEN"),
             deepseek_api_key=_required("DEEPSEEK_API_KEY"),
             deepseek_base_url=_env("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
-            deepseek_model=_env("DEEPSEEK_MODEL", "deepseek-v4-flash"),
+            deepseek_model=_env("DEEPSEEK_MODEL", "deepseek-v4-flash-vision-exp"),
+            deepseek_vision_detail=_env("DEEPSEEK_VISION_DETAIL", "low"),
             admin_ids=_parse_admin_ids(_env("ADMIN_IDS", "")),
             support_url=_env("SUPPORT_URL", ""),
             free_daily_limit=_positive_int("FREE_DAILY_LIMIT", 10),

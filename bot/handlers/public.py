@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import io
 import logging
 from pathlib import Path
 from secrets import randbelow
@@ -171,7 +173,31 @@ async def photo_chat(
         await answer_user_scoped_message(message, INPUT_TOO_LONG_MESSAGE.format(limit=settings.max_input_chars))
         return
 
-    await answer_user_scoped_message(message, PHOTO_DISABLED_MESSAGE)
+    if not message.photo:
+        return
+
+    photo = message.photo[-1]
+    file_stream = io.BytesIO()
+    try:
+        await message.bot.download(photo, destination=file_stream)
+        image_bytes = file_stream.getvalue()
+        base64_data = base64.b64encode(image_bytes).decode("utf-8")
+    except Exception:
+        logger.exception("Failed to download Telegram photo for AI analysis")
+        await answer_user_scoped_message(message, IMAGE_PROVIDER_ERROR_MESSAGE)
+        return
+
+    bot_user = await message.bot.get_me()
+    cleaned_caption = strip_bot_mention(caption, bot_user.username or "") if not is_private_chat(message) else caption
+    user_text = cleaned_caption if cleaned_caption is not None else caption
+
+    user_input = UserInput(
+        text=user_text.strip(),
+        image_base64=base64_data,
+        image_mime_type="image/jpeg",
+        image_detail=settings.deepseek_vision_detail,
+    )
+    await handle_ai_chat(message, settings, app_storage, ai_service, user_input)
 
 
 @router.message(F.text, TextChatFilter())

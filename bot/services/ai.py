@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class UserInput:
     text: str
+    image_base64: str | None = None
+    image_mime_type: str = "image/jpeg"
+    image_detail: str | None = None
 
 
 class AIProviderError(RuntimeError):
@@ -65,8 +68,23 @@ class CatGPTAI:
                     yield delta
         except Exception as exc:  # noqa: BLE001 - SDK/provider exceptions vary by compatible endpoint.
             logger.exception("AI provider request failed")
+            exc_str = str(exc).lower()
+            likely_image_unsupported = bool(
+                user_input.image_base64
+                and any(
+                    err in exc_str
+                    for err in (
+                        "image",
+                        "vision",
+                        "multimodal",
+                        "unsupported",
+                        "400",
+                    )
+                )
+            )
             raise AIProviderError(
                 "AI provider request failed",
+                likely_image_unsupported=likely_image_unsupported,
                 is_timeout=_is_timeout_error(exc),
             ) from exc
 
@@ -112,7 +130,30 @@ def build_messages(
 
 
 def build_user_content(user_input: UserInput) -> str | list[dict]:
-    return user_input.text
+    if not user_input.image_base64:
+        return user_input.text
+
+    content: list[dict] = []
+    text = user_input.text.strip()
+    if text:
+        content.append({"type": "text", "text": text})
+    else:
+        content.append({"type": "text", "text": "Describe this image in detail or answer questions about it."})
+
+    mime = user_input.image_mime_type or "image/jpeg"
+    image_url_dict: dict[str, str] = {
+        "url": f"data:{mime};base64,{user_input.image_base64}",
+    }
+    if user_input.image_detail:
+        image_url_dict["detail"] = user_input.image_detail
+
+    content.append(
+        {
+            "type": "image_url",
+            "image_url": image_url_dict,
+        }
+    )
+    return content
 
 
 def extract_chat_delta(chunk: object) -> str:
