@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 from openai import APITimeoutError, AsyncOpenAI
@@ -94,18 +95,27 @@ class CatGPTAI:
         user_input: UserInput,
         messages: list[dict],
     ) -> dict:
-        kwargs = {
+        thinking_mode = self.settings.deepseek_thinking_mode.strip().lower()
+        is_thinking_enabled = thinking_mode in ("enabled", "enable", "true", "1", "on")
+
+        extra_body: dict[str, Any] = {
+            "user_id": str(telegram_user_id),
+            "thinking": {"type": "enabled" if is_thinking_enabled else "disabled"},
+        }
+
+        kwargs: dict[str, Any] = {
             "model": self.settings.deepseek_model,
             "messages": messages,
             "max_tokens": self.settings.max_output_tokens,
             "stream": True,
             "stream_options": {"include_usage": True},
             "tool_choice": "none",
-            "extra_body": {
-                "user_id": str(telegram_user_id),
-                "thinking": {"type": "disabled"},
-            },
+            "extra_body": extra_body,
         }
+
+        if is_thinking_enabled and self.settings.deepseek_thinking_effort:
+            kwargs["reasoning_effort"] = self.settings.deepseek_thinking_effort.strip().lower()
+
         return kwargs
 
 

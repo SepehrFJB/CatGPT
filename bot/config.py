@@ -28,6 +28,8 @@ class Settings:
     database_url: str
     group_welcome_photo: str
     deepseek_vision_detail: str
+    deepseek_thinking_mode: str
+    deepseek_thinking_effort: str
 
     @classmethod
     def from_env(cls, env_file: str | Path = ".env") -> "Settings":
@@ -39,6 +41,8 @@ class Settings:
             deepseek_base_url=_env("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
             deepseek_model=_env("DEEPSEEK_MODEL", "deepseek-v4-flash-vision-exp"),
             deepseek_vision_detail=_env("DEEPSEEK_VISION_DETAIL", "low"),
+            deepseek_thinking_mode=_env("DEEPSEEK_THINKING_MODE", "disabled"),
+            deepseek_thinking_effort=_env("DEEPSEEK_THINKING_EFFORT", "low"),
             admin_ids=_parse_admin_ids(_env("ADMIN_IDS", "")),
             support_url=_env("SUPPORT_URL", ""),
             free_daily_limit=_positive_int("FREE_DAILY_LIMIT", 10),
