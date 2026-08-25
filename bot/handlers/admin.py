@@ -3,13 +3,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+from html import escape
 from typing import Any
 from urllib.parse import urlparse
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError, TelegramRetryAfter
 from aiogram.filters import Filter
-from aiogram.types import Message, ReplyKeyboardRemove
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 
 from bot.config import Settings
 from bot.database import CatGPTStorage, format_timestamp
@@ -45,6 +46,7 @@ from bot.keyboards import (
     admin_home_back_keyboard,
     admin_id_select_keyboard,
     admin_keyboard,
+    admin_plus_users_inline_keyboard,
     admin_user_action_keyboard,
 )
 from bot.texts import (
@@ -139,6 +141,8 @@ async def admin_stats(message: Message, settings: Settings, app_storage: CatGPTS
     if not await is_admin(message, settings, app_storage):
         return
     stats = await app_storage.admin_stats(settings.free_daily_limit, settings.plus_daily_limit)
+    plus_users_count = int(stats["plus_users"])
+    inline_markup = admin_plus_users_inline_keyboard(plus_users_count) if plus_users_count > 0 else None
     await message.answer(
         "\n".join(
             [
@@ -166,8 +170,52 @@ async def admin_stats(message: Message, settings: Settings, app_storage: CatGPTS
                 f"└ Plus Plan: {stats['plus_limit']} msgs/day",
             ]
         ),
-        reply_markup=admin_keyboard(),
+        reply_markup=inline_markup,
     )
+
+
+@router.callback_query(F.data == "admin:plus_users")
+async def admin_plus_users_callback(
+    callback: CallbackQuery,
+    settings: Settings,
+    app_storage: CatGPTStorage,
+) -> None:
+    if callback.from_user is None or callback.message is None:
+        return
+    user_id = callback.from_user.id
+    if not (settings.is_admin(user_id) or await app_storage.is_bot_admin(user_id)):
+        await callback.answer("⛔️ Access denied.", show_alert=True)
+        return
+
+    plus_users = await app_storage.list_plus_users()
+    if not plus_users:
+        await callback.answer("No active Plus users found.", show_alert=True)
+        return
+
+    lines = [f"⭐ <b>Plus Users List ({len(plus_users)})</b>", ""]
+    for idx, u in enumerate(plus_users, 1):
+        uid = u["telegram_id"]
+        uname = f"@{u['username']}" if u.get("username") else "No username"
+        first = u.get("first_name") or ""
+        last = u.get("last_name") or ""
+        full_name = escape(f"{first} {last}".strip() or f"User {uid}")
+        expires_at = u.get("plus_expires_at")
+        expires_str = format_timestamp(expires_at) if expires_at else "Unlimited"
+        lines.extend(
+            [
+                f"<b>{idx}. {full_name}</b> ({uname})",
+                f"├ 👤 <b>User ID:</b> <code>{uid}</code>",
+                f"└ 📅 <b>Expires:</b> {expires_str}",
+                "",
+            ]
+        )
+
+    await callback.message.answer(
+        "\n".join(lines).strip(),
+        parse_mode="HTML",
+        disable_web_page_preview=True,
+    )
+    await callback.answer()
 
 
 @router.message(F.text == ADMIN_BUTTONS[1])

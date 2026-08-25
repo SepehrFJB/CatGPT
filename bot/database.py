@@ -386,6 +386,29 @@ class CatGPTStorage:
         rows = await self.db.execute_fetchall("SELECT chat_id FROM group_chats ORDER BY chat_id ASC")
         return [int(row["chat_id"]) for row in rows]
 
+    async def list_plus_users(self, now: int | None = None) -> list[dict[str, Any]]:
+        now = unix_now() if now is None else now
+        rows = await self.db.execute_fetchall(
+            """
+            SELECT telegram_id, username, first_name, last_name, plus_expires_at, created_at
+            FROM users
+            WHERE plus_expires_at > ?
+            ORDER BY plus_expires_at ASC
+            """,
+            (now,),
+        )
+        return [
+            {
+                "telegram_id": int(row["telegram_id"]),
+                "username": row["username"],
+                "first_name": row["first_name"],
+                "last_name": row["last_name"],
+                "plus_expires_at": row["plus_expires_at"],
+                "created_at": row["created_at"],
+            }
+            for row in rows
+        ]
+
     async def is_force_sub_enabled(self) -> bool:
         row = await self._fetchone("SELECT value FROM app_settings WHERE key = 'force_sub_enabled'")
         return bool(row and str(row["value"]) == "1")

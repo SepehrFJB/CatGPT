@@ -169,3 +169,17 @@ def plus_payment_keyboard(invoice_link: str, price: int) -> InlineKeyboardMarkup
             ]
         ]
     )
+
+
+def admin_plus_users_inline_keyboard(count: int = 0) -> InlineKeyboardMarkup:
+    button_text = f"⭐ Plus Users ({count})" if count > 0 else "⭐ Plus Users"
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=button_text,
+                    callback_data="admin:plus_users",
+                )
+            ]
+        ]
+    )
