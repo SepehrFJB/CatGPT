@@ -23,6 +23,8 @@ from bot.keyboards import (
     ADMIN_BLOCKS_LIST,
     ADMIN_BLOCKS_REMOVE,
     ADMIN_BLOCK_USER,
+    ADMIN_BOT_PAUSE,
+    ADMIN_BOT_RESUME,
     ADMIN_BROADCAST_FORWARD,
     ADMIN_BROADCAST_GROUPS,
     ADMIN_BROADCAST_NORMAL,
@@ -52,6 +54,8 @@ from bot.keyboards import (
 from bot.texts import (
     ADMIN_PANEL_MESSAGE,
     BLOCKED_BY_ADMIN_MESSAGE,
+    BOT_PAUSED_ADMIN_MESSAGE,
+    BOT_RESUMED_ADMIN_MESSAGE,
     GROUP_BLOCKED_BY_ADMIN_MESSAGE,
     GROUP_UNBLOCKED_BY_ADMIN_MESSAGE,
     PLUS_ADMIN_GRANTED_MESSAGE,
@@ -99,6 +103,8 @@ ADMIN_KEYBOARD_TEXTS = frozenset(
         ADMIN_BLOCKS_LIST,
         ADMIN_BLOCKS_ADD,
         ADMIN_BLOCKS_REMOVE,
+        ADMIN_BOT_PAUSE,
+        ADMIN_BOT_RESUME,
         ADMIN_GRANT_PLUS,
         ADMIN_REVOKE_PLUS,
         ADMIN_BLOCK_USER,
@@ -161,6 +167,7 @@ async def admin_stats(message: Message, settings: Settings, app_storage: CatGPTS
                 f"└ Payments: {stats['payments']}",
                 "",
                 "🛡 Moderation",
+                f"├ Bot Status: {'🔴 Paused (Maintenance)' if stats.get('bot_paused') else '🟢 Active'}",
                 f"├ Blocked Users/Groups: {stats['blocked']}",
                 f"├ Force Join: {stats['force_sub']}",
                 f"└ Required Channels: {stats['channels']}",
@@ -263,9 +270,10 @@ async def admin_blocks(message: Message, settings: Settings, app_storage: CatGPT
         await message.answer("⛔️ Only the owner can block a user or group.", reply_markup=admin_keyboard())
         return
     clear_admin_state(message)
+    is_paused = await app_storage.is_bot_paused()
     await message.answer(
-        "⛔️ Block management\n\nView blocked targets, add a new block, or remove a block.",
-        reply_markup=admin_blocks_keyboard(),
+        "⛔️ Block management\n\nView blocked targets, add a new block, or pause/resume the bot.",
+        reply_markup=admin_blocks_keyboard(is_paused),
     )
 
 
@@ -408,6 +416,7 @@ async def admin_blocks_list(message: Message, settings: Settings, app_storage: C
         await message.answer("⛔️ Only the owner can view blocked targets.", reply_markup=admin_keyboard())
         return
     blocked = await app_storage.list_blocked_targets()
+    is_paused = await app_storage.is_bot_paused()
     lines = ["✅ Blocked targets", ""]
     if not blocked:
         lines.append("No blocked targets found.")
@@ -415,7 +424,7 @@ async def admin_blocks_list(message: Message, settings: Settings, app_storage: C
         for item in blocked:
             label = "Group" if str(item["target_type"]) == "group" else "User"
             lines.append(f"• {label} - {item['target_id']}")
-    await message.answer("\n".join(lines), reply_markup=admin_blocks_keyboard())
+    await message.answer("\n".join(lines), reply_markup=admin_blocks_keyboard(is_paused))
 
 
 @router.message(F.text == ADMIN_BLOCKS_ADD)
@@ -439,11 +448,23 @@ async def admin_blocks_remove(message: Message, settings: Settings, app_storage:
         return
     blocked = await app_storage.list_blocked_targets()
     ids = [int(item["target_id"]) for item in blocked]
+    is_paused = await app_storage.is_bot_paused()
     if not ids:
-        await message.answer("ℹ️ Blocked list is empty.", reply_markup=admin_blocks_keyboard())
+        await message.answer("ℹ️ Blocked list is empty.", reply_markup=admin_blocks_keyboard(is_paused))
         return
     set_admin_state(message, STATE_BLOCK_REMOVE)
     await message.answer("⚠️ Select target ID to remove block:", reply_markup=admin_id_select_keyboard(ids, True))
+
+
+@router.message(F.text.in_({ADMIN_BOT_PAUSE, ADMIN_BOT_RESUME}))
+async def admin_bot_pause_toggle(message: Message, settings: Settings, app_storage: CatGPTStorage) -> None:
+    if not await is_owner(message, app_storage):
+        await message.answer("⛔️ Only the owner can pause or resume the bot.", reply_markup=admin_keyboard())
+        return
+    should_pause = message.text == ADMIN_BOT_PAUSE
+    await app_storage.set_bot_paused(should_pause)
+    text = BOT_PAUSED_ADMIN_MESSAGE if should_pause else BOT_RESUMED_ADMIN_MESSAGE
+    await message.answer(text, parse_mode="HTML", reply_markup=admin_blocks_keyboard(should_pause))
 
 
 @router.message(F.text.in_({ADMIN_GRANT_PLUS, ADMIN_REVOKE_PLUS, ADMIN_BLOCK_USER, ADMIN_UNBLOCK_USER}))
@@ -693,11 +714,12 @@ async def handle_force_remove(message: Message, app_storage: CatGPTStorage) -> N
 
 async def handle_block_add(message: Message, app_storage: CatGPTStorage) -> None:
     target_id = parse_int(message.text)
+    is_paused = await app_storage.is_bot_paused()
     if target_id is None or target_id == 0:
         await message.answer("⛔️ Send a valid user/group ID.", reply_markup=admin_home_back_keyboard())
         return
     if await app_storage.is_bot_admin(target_id):
-        await message.answer("⛔️ Bot admins cannot be blocked.", reply_markup=admin_blocks_keyboard())
+        await message.answer("⛔️ Bot admins cannot be blocked.", reply_markup=admin_blocks_keyboard(is_paused))
         clear_admin_state(message)
         return
     target_type = await app_storage.add_blocked_target(target_id)
@@ -708,7 +730,7 @@ async def handle_block_add(message: Message, app_storage: CatGPTStorage) -> None
         target_id,
         GROUP_BLOCKED_BY_ADMIN_MESSAGE if target_type == "group" else BLOCKED_BY_ADMIN_MESSAGE,
     )
-    await message.answer(f"✅ {label} {target_id} was blocked successfully.", reply_markup=admin_blocks_keyboard())
+    await message.answer(f"✅ {label} {target_id} was blocked successfully.", reply_markup=admin_blocks_keyboard(is_paused))
 
 
 async def handle_block_remove(message: Message, app_storage: CatGPTStorage) -> None:
@@ -717,6 +739,7 @@ async def handle_block_remove(message: Message, app_storage: CatGPTStorage) -> N
         await message.answer("⛔️ Select or send a valid blocked ID.", reply_markup=admin_home_back_keyboard())
         return
     removed = await app_storage.remove_blocked_target(target_id)
+    is_paused = await app_storage.is_bot_paused()
     clear_admin_state(message)
     if removed:
         await notify_target_safely(
@@ -725,7 +748,7 @@ async def handle_block_remove(message: Message, app_storage: CatGPTStorage) -> N
             GROUP_UNBLOCKED_BY_ADMIN_MESSAGE if target_id < 0 else UNBLOCKED_BY_ADMIN_MESSAGE,
         )
     text = f"✅ Block removed for ID {target_id}." if removed else "⛔️ Block was not found."
-    await message.answer(text, reply_markup=admin_blocks_keyboard())
+    await message.answer(text, reply_markup=admin_blocks_keyboard(is_paused))
 
 
 async def send_force_join_status(message: Message, app_storage: CatGPTStorage) -> None:

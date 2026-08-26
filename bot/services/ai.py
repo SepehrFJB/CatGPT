@@ -109,7 +109,7 @@ class CatGPTAI:
             "max_tokens": self.settings.max_output_tokens,
             "stream": True,
             "stream_options": {"include_usage": True},
-            "tool_choice": "none",
+            "user": str(telegram_user_id),
             "extra_body": extra_body,
         }
 
@@ -148,7 +148,7 @@ def build_user_content(user_input: UserInput) -> str | list[dict]:
     if text:
         content.append({"type": "text", "text": text})
     else:
-        content.append({"type": "text", "text": "Describe this image in detail or answer questions about it."})
+        content.append({"type": "text", "text": "Describe this image."})
 
     mime = user_input.image_mime_type or "image/jpeg"
     image_url_dict: dict[str, str] = {

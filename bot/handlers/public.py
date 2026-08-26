@@ -36,6 +36,7 @@ from bot.services.payments import (
 from bot.services.telegram_stream import TelegramDraftStreamer, send_final_text, split_final_text
 from bot.texts import (
     BLOCKED_ACCESS_MESSAGE,
+    BOT_MAINTENANCE_MESSAGE,
     EMPTY_RESPONSE_MESSAGE,
     FORCE_JOIN_MISSING_MESSAGE,
     FORCE_JOIN_OK_MESSAGE,
@@ -273,9 +274,13 @@ async def guest_chat(
         return
 
     is_admin = settings.is_admin(user.id) or await app_storage.is_bot_admin(user.id)
-    if not is_admin and await app_storage.is_blocked(user.id, message.chat.id):
-        await answer_guest_text(message, guest_query_id, "Access blocked", BLOCKED_ACCESS_MESSAGE)
-        return
+    if not is_admin:
+        if await app_storage.is_bot_paused():
+            await answer_guest_text(message, guest_query_id, "Maintenance", BOT_MAINTENANCE_MESSAGE)
+            return
+        if await app_storage.is_blocked(user.id, message.chat.id):
+            await answer_guest_text(message, guest_query_id, "Access blocked", BLOCKED_ACCESS_MESSAGE)
+            return
 
     quota = await app_storage.try_consume_quota(
         telegram_id=user.id,
@@ -345,10 +350,14 @@ async def inline_guest_chat(
         return
 
     await app_storage.upsert_user(query.from_user)
-    if await app_storage.is_blocked(query.from_user.id, None):
-        await answer_inline_text(query, "Access blocked", BLOCKED_ACCESS_MESSAGE)
-        return
     is_admin = settings.is_admin(query.from_user.id) or await app_storage.is_bot_admin(query.from_user.id)
+    if not is_admin:
+        if await app_storage.is_bot_paused():
+            await answer_inline_text(query, "Maintenance", BOT_MAINTENANCE_MESSAGE)
+            return
+        if await app_storage.is_blocked(query.from_user.id, None):
+            await answer_inline_text(query, "Access blocked", BLOCKED_ACCESS_MESSAGE)
+            return
     quota = await app_storage.try_consume_quota(
         telegram_id=query.from_user.id,
         chat_id=0,
@@ -400,11 +409,15 @@ async def unsupported_attachment(message: Message, settings: Settings, app_stora
 
 
 @router.callback_query(F.data == "force:check")
-async def force_join_check(callback: CallbackQuery, app_storage: CatGPTStorage) -> None:
+async def force_join_check(callback: CallbackQuery, settings: Settings, app_storage: CatGPTStorage) -> None:
     if callback.from_user is None:
         return
     if callback.message is None:
         await callback.answer(FORCE_JOIN_MISSING_MESSAGE, show_alert=True)
+        return
+    is_admin = settings.is_admin(callback.from_user.id) or await app_storage.is_bot_admin(callback.from_user.id)
+    if not is_admin and await app_storage.is_bot_paused():
+        await callback.answer(BOT_MAINTENANCE_MESSAGE, show_alert=True)
         return
     missing = await missing_required_channels(callback.message.bot, app_storage, callback.from_user.id)
     if missing:
@@ -767,6 +780,9 @@ async def ensure_user_access(message: Message, settings: Settings, app_storage: 
     await app_storage.upsert_group_chat(message.chat)
     if await is_bot_admin(message, settings, app_storage):
         return True
+    if await app_storage.is_bot_paused():
+        await answer_user_scoped_message(message, BOT_MAINTENANCE_MESSAGE)
+        return False
     if await app_storage.is_blocked(message.from_user.id, message.chat.id):
         await message.answer(BLOCKED_ACCESS_MESSAGE)
         return False

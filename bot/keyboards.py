@@ -35,6 +35,8 @@ ADMIN_FORCE_ENABLE = "✅ Enable"
 ADMIN_BLOCKS_LIST = "📜 Blocked list"
 ADMIN_BLOCKS_ADD = "➕ Add block"
 ADMIN_BLOCKS_REMOVE = "➖ Remove block"
+ADMIN_BOT_PAUSE = "⏸ Pause Bot"
+ADMIN_BOT_RESUME = "▶️ Resume Bot"
 
 ADMIN_GRANT_PLUS = "⭐ Grant Plus"
 ADMIN_REVOKE_PLUS = "❌ Revoke Plus"
@@ -110,13 +112,14 @@ def admin_force_join_keyboard(enabled: bool) -> ReplyKeyboardMarkup:
     return kb.as_markup(resize_keyboard=True)
 
 
-def admin_blocks_keyboard() -> ReplyKeyboardMarkup:
+def admin_blocks_keyboard(is_paused: bool = False) -> ReplyKeyboardMarkup:
     kb = ReplyKeyboardBuilder()
     kb.button(text=ADMIN_BLOCKS_LIST)
     kb.button(text=ADMIN_BLOCKS_ADD)
     kb.button(text=ADMIN_BLOCKS_REMOVE)
+    kb.button(text=ADMIN_BOT_RESUME if is_paused else ADMIN_BOT_PAUSE)
     kb.button(text=ADMIN_BACK)
-    kb.adjust(1, 2, 1)
+    kb.adjust(1, 2, 1, 1)
     return kb.as_markup(resize_keyboard=True)
 
 

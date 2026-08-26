@@ -6,17 +6,31 @@ from aiogram.types import Message, PreCheckoutQuery
 from bot.config import Settings
 from bot.database import CatGPTStorage
 from bot.services.payments import PLUS_CURRENCY, parse_plus_payload
-from bot.texts import PLUS_PAYMENT_INVALID_MESSAGE, PLUS_PAYMENT_SUCCESS_MESSAGE
+from bot.texts import (
+    BOT_MAINTENANCE_MESSAGE,
+    PLUS_PAYMENT_INVALID_MESSAGE,
+    PLUS_PAYMENT_SUCCESS_MESSAGE,
+)
 
 router = Router(name="payments")
 
 
 @router.pre_checkout_query()
-async def pre_checkout_plus(query: PreCheckoutQuery, settings: Settings) -> None:
+async def pre_checkout_plus(
+    query: PreCheckoutQuery,
+    settings: Settings,
+    app_storage: CatGPTStorage,
+) -> None:
+    if query.from_user is not None:
+        is_admin = settings.is_admin(query.from_user.id) or await app_storage.is_bot_admin(query.from_user.id)
+        if not is_admin and await app_storage.is_bot_paused():
+            await query.answer(ok=False, error_message=BOT_MAINTENANCE_MESSAGE)
+            return
+
     payload = parse_plus_payload(query.invoice_payload)
     if (
         payload is None
-        or payload.user_id != query.from_user.id
+        or (query.from_user is not None and payload.user_id != query.from_user.id)
         or query.currency != PLUS_CURRENCY
         or query.total_amount != settings.plus_stars_price
     ):

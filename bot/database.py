@@ -365,6 +365,7 @@ class CatGPTStorage:
         blocked = await self._count("SELECT COUNT(*) FROM blocked_targets")
         channels = await self._count("SELECT COUNT(*) FROM required_channels")
         force_sub_enabled = await self.is_force_sub_enabled()
+        bot_paused = await self.is_bot_paused()
         return {
             "users": users,
             "groups": groups,
@@ -376,6 +377,7 @@ class CatGPTStorage:
             "free_limit": free_limit,
             "plus_limit": plus_limit,
             "force_sub": "Enabled" if force_sub_enabled else "Disabled",
+            "bot_paused": bot_paused,
         }
 
     async def list_user_ids(self) -> list[int]:
@@ -408,6 +410,23 @@ class CatGPTStorage:
             }
             for row in rows
         ]
+
+    async def is_bot_paused(self) -> bool:
+        row = await self._fetchone("SELECT value FROM app_settings WHERE key = 'bot_paused'")
+        return bool(row and str(row["value"]) == "1")
+
+    async def set_bot_paused(self, paused: bool) -> None:
+        await self.db.execute(
+            """
+            INSERT INTO app_settings (key, value, updated_at)
+            VALUES ('bot_paused', ?, ?)
+            ON CONFLICT(key) DO UPDATE SET
+                value = excluded.value,
+                updated_at = excluded.updated_at
+            """,
+            ("1" if paused else "0", unix_now()),
+        )
+        await self.db.commit()
 
     async def is_force_sub_enabled(self) -> bool:
         row = await self._fetchone("SELECT value FROM app_settings WHERE key = 'force_sub_enabled'")

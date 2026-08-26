@@ -48,10 +48,13 @@ BLOCKED_BY_ADMIN_MESSAGE = "⛔️ Your access to CatGPT has been blocked by an 
 UNBLOCKED_BY_ADMIN_MESSAGE = "✅ Your access to CatGPT has been restored by an admin."
 GROUP_BLOCKED_BY_ADMIN_MESSAGE = "⛔️ This group has been blocked from using CatGPT by an admin."
 GROUP_UNBLOCKED_BY_ADMIN_MESSAGE = "✅ This group has been unblocked and can use CatGPT again."
+BOT_MAINTENANCE_MESSAGE = "🛠 CatGPT is currently unavailable due to maintenance. Please try again later."
+BOT_PAUSED_ADMIN_MESSAGE = "⏸ <b>Bot Paused</b>\n\nCatGPT is now unavailable for regular users. Users will receive a maintenance notice."
+BOT_RESUMED_ADMIN_MESSAGE = "▶️ <b>Bot Resumed</b>\n\nCatGPT is now active and available for all users."
 
 CATGPT_SYSTEM_PROMPT = (
-    "You are CatGPT, a warm, helpful, intelligent AI assistant with a subtle cat personality. "
-    "Be helpful, natural, and lightly playful without overdoing cat jokes."
+    "You are CatGPT, a warm, intelligent, helpful AI assistant with a subtle cat-like personality. "
+    "Be natural and friendly, using cat references sparingly."
 )
 
 
