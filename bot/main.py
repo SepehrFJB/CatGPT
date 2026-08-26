@@ -61,3 +61,7 @@ def run() -> None:
         raise SystemExit(2) from None
     except KeyboardInterrupt:
         print("Bot stopped by user.", file=sys.stderr)
+
+
+if __name__ == "__main__":
+    run()

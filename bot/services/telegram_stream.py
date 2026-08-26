@@ -202,8 +202,8 @@ def flush_blockquote(quote_lines: list[str], output_lines: list[str]) -> None:
 def has_inline_markdown(text: str) -> bool:
     return (
         "`" in text
-        or "**" in text
-        or "__" in text
+        or "*" in text
+        or "_" in text
         or "~~" in text
         or "||" in text
         or "<blockquote>" in text
@@ -220,8 +220,10 @@ def format_inline_markdown_as_html(text: str) -> str:
     position = 0
     while position < len(text):
         code_start = text.find("`", position)
+        bold_italic_start = text.find("***", position)
         bold_start = find_next_inline_marker(text, position)
-        next_start = min_existing(code_start, bold_start)
+        italic_start = find_next_italic_marker(text, position)
+        next_start = min_existing(code_start, bold_italic_start, bold_start, italic_start)
         if next_start < 0:
             parts.append(escape(text[position:]))
             break
@@ -243,6 +245,17 @@ def format_inline_markdown_as_html(text: str) -> str:
                 continue
             parts.append(f"<code>{escape(text[code_start + 1:end])}</code>")
             position = end + 1
+            continue
+
+        if bold_italic_start >= 0 and next_start == bold_italic_start:
+            end = text.find("***", bold_italic_start + 3)
+            if end < 0 or "\n" in text[bold_italic_start + 3 : end]:
+                parts.append(escape("***"))
+                position = bold_italic_start + 3
+                continue
+            inner = format_inline_markdown_as_html(text[bold_italic_start + 3 : end])
+            parts.append(f"<b><i>{inner}</i></b>")
+            position = end + 3
             continue
 
         if text.startswith("||", next_start):
@@ -267,15 +280,28 @@ def format_inline_markdown_as_html(text: str) -> str:
             position = end + 2
             continue
 
-        marker = text[bold_start : bold_start + 2]
-        end = text.find(marker, bold_start + 2)
-        if end < 0 or "\n" in text[bold_start + 2 : end]:
-            parts.append(escape(marker))
-            position = bold_start + 2
+        if text.startswith("**", next_start) or text.startswith("__", next_start):
+            marker = text[next_start : next_start + 2]
+            end = text.find(marker, next_start + 2)
+            if end < 0 or "\n" in text[next_start + 2 : end]:
+                parts.append(escape(marker))
+                position = next_start + 2
+                continue
+            inner = format_inline_markdown_as_html(text[next_start + 2 : end])
+            parts.append(f"<b>{inner}</b>")
+            position = end + 2
             continue
-        inner = format_inline_markdown_as_html(text[bold_start + 2 : end])
-        parts.append(f"<b>{inner}</b>")
-        position = end + 2
+
+        if italic_start >= 0 and next_start == italic_start:
+            m = re.match(r"(?<!\*)\*(?!\s|\*)(.+?)(?<!\s|\*)\*(?!\*)", text[italic_start:])
+            if m:
+                inner = format_inline_markdown_as_html(m.group(1))
+                parts.append(f"<i>{inner}</i>")
+                position = italic_start + m.end()
+                continue
+
+        parts.append(escape(text[next_start]))
+        position = next_start + 1
 
     return "".join(parts)
 
@@ -309,6 +335,11 @@ def find_next_inline_marker(text: str, start: int) -> int:
         if index >= 0
     ]
     return min(candidates) if candidates else -1
+
+
+def find_next_italic_marker(text: str, start: int) -> int:
+    match = re.search(r"(?<!\*)\*(?!\s|\*)(.+?)(?<!\s|\*)\*(?!\*)", text[start:])
+    return start + match.start() if match else -1
 
 
 def find_next_markdown_link(text: str, start: int) -> int:
