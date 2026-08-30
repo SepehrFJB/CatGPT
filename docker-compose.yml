@@ -1,0 +1,19 @@
+services:
+  catgpt-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: catgpt-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./catgpt.sqlite3:/app/catgpt.sqlite3
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
