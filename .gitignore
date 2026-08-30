@@ -1,17 +1,66 @@
+# Environment & Secrets
 .env
+.env.*
+!.env.example
+
+# Python & Virtual Environments
 .venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 __pycache__/
 *.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Testing & Linters
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.coverage
+htmlcov/
 .codex_tmp/
-*.egg-info/
+
+# SQLite Database & Journal Files
 catgpt.sqlite3
 *.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 *.db
-backups/
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Runtime Directories & Logs
 logs/
 *.log
+backups/
+downloads/
+*.bak
+
+# Media Assets (Local)
 catgpt.png
 catgptbot.png
+
+# IDE & Editor Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
