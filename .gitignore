@@ -30,10 +30,12 @@ htmlcov/
 # SQLite Database & Journal Files
 catgpt.sqlite3
 *.sqlite3
+*.sqlite*
 *.sqlite3-journal
 *.sqlite3-wal
 *.sqlite3-shm
 *.db
+*.db*
 backups/
 *.db-journal
 *.db-wal
