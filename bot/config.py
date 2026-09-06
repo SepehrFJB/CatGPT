@@ -7,6 +7,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
+DEFAULT_DATABASE_URL = "sqlite+aiosqlite:///catgpt.sqlite3"
+
+
 class SettingsError(RuntimeError):
     """Raised when required runtime configuration is missing or invalid."""
 
@@ -51,7 +54,7 @@ class Settings:
             plus_period_seconds=_positive_int("PLUS_PERIOD_SECONDS", 2_592_000),
             max_input_chars=_positive_int("MAX_INPUT_CHARS", 1_000),
             max_output_tokens=_positive_int("MAX_OUTPUT_TOKENS", 800),
-            database_url=_env("DATABASE_URL", "sqlite+aiosqlite:///catgpt.sqlite3"),
+            database_url=_env("DATABASE_URL", DEFAULT_DATABASE_URL),
             group_welcome_photo=_env("GROUP_WELCOME_PHOTO", ""),
         )
 
