@@ -14,8 +14,7 @@ backups/
 logs/
 downloads/
 *.log
-catgpt.png
-catgptbot.png
+# Environment & Secrets
 .env
 .env.*
 !.env.example

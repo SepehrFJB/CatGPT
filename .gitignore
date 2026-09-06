@@ -48,10 +48,6 @@ backups/
 downloads/
 *.bak
 
-# Media Assets (Local)
-catgpt.png
-catgptbot.png
-
 # IDE & Editor Files
 .idea/
 .vscode/

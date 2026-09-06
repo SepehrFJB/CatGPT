@@ -108,7 +108,7 @@ Create a `.env` file from `.env.example` and fill in the real values.
 - `MAX_INPUT_CHARS`: maximum user text length (default: `1000`)
 - `MAX_OUTPUT_TOKENS`: maximum AI output tokens (default: `800`)
 - `DATABASE_URL`: SQLite database URL (default: `sqlite+aiosqlite:///catgpt.sqlite3`)
-- `GROUP_WELCOME_PHOTO`: optional local path or Telegram file ID for the group welcome photo
+- `GROUP_WELCOME_PHOTO`: optional local path (e.g. `assets/catgptbot.png`) or Telegram file ID for the group welcome photo
 
 ## Commands
 - `/start` start + register user

@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Create application directories for persistence
-RUN mkdir -p /app/logs /app/backups /app/downloads
+RUN mkdir -p /app/logs /app/backups /app/downloads /app/assets
 
 # Install Python requirements
 COPY requirements.txt .
@@ -26,6 +26,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code
 COPY bot ./bot
+COPY assets ./assets
 COPY .env.example .
 
 # Run the bot module

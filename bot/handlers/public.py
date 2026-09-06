@@ -770,6 +770,11 @@ def resolve_photo_input(value: str) -> str | FSInputFile:
     path = Path(value).expanduser()
     if path.is_file():
         return FSInputFile(path)
+    if not path.is_absolute():
+        project_root = Path(__file__).resolve().parents[2]
+        candidate = project_root / path
+        if candidate.is_file():
+            return FSInputFile(candidate)
     return value
 
 
