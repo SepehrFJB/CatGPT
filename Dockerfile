@@ -25,9 +25,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source code
-COPY bot ./bot
-COPY assets ./assets
-COPY .env.example .
+COPY . .
 
 # Run the bot module
 CMD ["python", "-m", "bot"]
