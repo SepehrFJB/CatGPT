@@ -187,8 +187,8 @@ setup_env() {
     INPUT_BASE_URL=${INPUT_BASE_URL:-https://api.deepseek.com}
 
     # DEEPSEEK_MODEL
-    read -rp "4) DeepSeek Model [deepseek-v4-flash-vision-exp]: " INPUT_MODEL
-    INPUT_MODEL=${INPUT_MODEL:-deepseek-v4-flash-vision-exp}
+    read -rp "4) DeepSeek Model [deepseek-flash]: " INPUT_MODEL
+    INPUT_MODEL=${INPUT_MODEL:-deepseek-flash}
 
     # ADMIN_IDS
     read -rp "5) Admin Telegram User IDs (comma-separated, e.g. 12345678,87654321): " INPUT_ADMIN_IDS

@@ -95,7 +95,7 @@ Create a `.env` file from `.env.example` and fill in the real values.
 - `BOT_TOKEN`: Telegram bot token from BotFather (required)
 - `DEEPSEEK_API_KEY`: API key for the DeepSeek/OpenAI-compatible endpoint (required)
 - `DEEPSEEK_BASE_URL`: OpenAI-compatible API base URL (default: `https://api.deepseek.com`)
-- `DEEPSEEK_MODEL`: model name used for chat completions (default: `deepseek-v4-flash-vision-exp`)
+- `DEEPSEEK_MODEL`: model name used for chat completions (default: `deepseek-flash`)
 - `DEEPSEEK_VISION_DETAIL`: image resolution detail level for vision models (`low`, `high`, `auto`, default: `low`)
 - `DEEPSEEK_THINKING_MODE`: reasoning/thinking mode (`disabled` or `enabled`, default: `disabled`)
 - `DEEPSEEK_THINKING_EFFORT`: reasoning effort level when thinking mode is enabled (`low`, `medium`, `high`, default: `low`)
