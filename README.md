@@ -2,8 +2,6 @@
 
 CatGPT is an English Telegram AI bot built with aiogram and the OpenAI Python SDK against the official OpenAI-compatible DeepSeek endpoint.
 
-[Try the live bot](https://t.me/CatGPTAIBot)
-
 ## Server Deployment (Automated / Docker)
 
 ### Option 1: Quick Install via `install_server.sh` (Recommended)
